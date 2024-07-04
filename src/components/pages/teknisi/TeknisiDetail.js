@@ -1,6 +1,6 @@
 import { useStore } from '@/states';
 import { pickObject } from '@/utils/object';
-import _ from 'lodash';
+import { startCase } from 'lodash';
 import * as React from 'react';
 
 import { Descriptions, Flex } from 'antd';
@@ -14,10 +14,10 @@ export default function TeknisiDetail() {
 			const selectedKeys = ['firstName', 'lastName', 'username', 'email', 'role'];
 			const getData = pickObject(teknisi, selectedKeys);
 			const reshapedData = {
-				Nama: _.startCase(`${getData.firstName} ${getData.lastName}`),
+				Nama: startCase(`${getData.firstName} ${getData.lastName}`),
 				Username: getData.username,
 				Email: getData.email,
-				Role: _.startCase(getData.role),
+				Role: startCase(getData.role),
 			};
 			return Object.entries(reshapedData).map(([key, value], i) => ({ key: i + 1, label: key, children: value || '-' }));
 		}

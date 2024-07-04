@@ -1,5 +1,6 @@
 import { useStore } from '@/states';
 import { useRoleMenu } from '@/utils/hooks';
+import { startCase } from 'lodash';
 import * as React from 'react';
 
 import {
@@ -64,7 +65,7 @@ export default function TeknisiCard({ item }) {
 		>
 			<List.Item.Meta
 				avatar={<Avatar size={50} src={item.imageUrl} icon={!item.imageUrl ? <UserOutlined /> : null} />}
-				title={_.startCase(`${item.firstName} ${item.lastName}`)}
+				title={startCase(`${item.firstName} ${item.lastName}`)}
 				description={
 					<Space
 						size={5}
@@ -81,7 +82,7 @@ export default function TeknisiCard({ item }) {
 						</Flex>
 						<Flex align='center' gap={5}>
 							<IdcardOutlined />
-							<span>{_.startCase(item.role || '-')}</span>
+							<span>{startCase(item.role || '-')}</span>
 						</Flex>
 					</Space>
 				}

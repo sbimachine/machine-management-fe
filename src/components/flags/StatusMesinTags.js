@@ -1,11 +1,11 @@
 import { Tag } from 'antd';
-import _ from 'lodash';
+import { capitalize } from 'lodash';
 
 export default function StatusMesinTags({ value }) {
 	const tagList = {
-		ready: <Tag color='green'>{_.capitalize(value)}</Tag>,
-		perbaikan: <Tag color='gold'>{_.capitalize(value)}</Tag>,
-		rusak: <Tag color='red'>{_.capitalize(value)}</Tag>,
+		ready: <Tag color='green'>{capitalize(value)}</Tag>,
+		perbaikan: <Tag color='gold'>{capitalize(value)}</Tag>,
+		rusak: <Tag color='red'>{capitalize(value)}</Tag>,
 		default: '-',
 	};
 

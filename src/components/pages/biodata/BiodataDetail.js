@@ -5,7 +5,7 @@ import { useStore } from '@/states';
 import { pickObject } from '@/utils/object';
 import { parseFormFile } from '@/utils/parse';
 import { useQuery } from '@tanstack/react-query';
-import _ from 'lodash';
+import { capitalize, startCase } from 'lodash';
 import * as React from 'react';
 
 import BiodataPasswordModal from '@/components/pages/biodata/BiodataPasswordModal';
@@ -39,12 +39,12 @@ export default function BiodataDetail() {
 			const getData = pickObject(selectedData, selectedKeys);
 
 			const reshapedData = {
-				'Nama Lengkap': _.startCase(`${getData.firstName} ${getData.lastName}`),
+				'Nama Lengkap': startCase(`${getData.firstName} ${getData.lastName}`),
 				Email: getData.email,
 				'Nomor Telepon': getData.phone,
 				'Tanggal Lahir': getData.birthDate,
 				Alamat: getData.address,
-				Jabatan: _.capitalize(getData.role),
+				Jabatan: capitalize(getData.role),
 			};
 
 			return Object.entries(reshapedData).map(([key, value], i) => ({

@@ -23,9 +23,9 @@ export default function MenuBar({ inDrawer = false }) {
 	const selectedKey = React.useMemo(() => `${pathname === '/' ? undefined : pathname}`, [pathname]);
 
 	const labelMenu = React.useMemo(() => {
-		let labels = {};
+		const labels = { teknisi: 'Data Teknisi', perbaikan: 'Laporan Perbaikan' };
 		if (user?.role === 'supervisior') Object.assign(labels, { teknisi: 'Data Karyawan' });
-		else Object.assign(labels, { teknisi: 'Data Teknisi' });
+		else if (user?.role === 'produksi') Object.assign(labels, { perbaikan: 'Laporan Kerusakan' });
 		return labels;
 	}, [user]);
 
@@ -33,7 +33,7 @@ export default function MenuBar({ inDrawer = false }) {
 		() => [
 			{ key: '/absensi', icon: <CarryOutOutlined style={{ fontSize: 18 }} />, label: 'Absensi' },
 			{ key: '/mesin', icon: <SettingOutlined style={{ fontSize: 18 }} />, label: 'Data Mesin' },
-			{ key: '/perbaikan', icon: <FileSearchOutlined style={{ fontSize: 18 }} />, label: 'Laporan Perbaikan' },
+			{ key: '/perbaikan', icon: <FileSearchOutlined style={{ fontSize: 18 }} />, label: labelMenu.perbaikan },
 			{ key: '/hasil-perbaikan', icon: <FileDoneOutlined style={{ fontSize: 18 }} />, label: 'Laporan Hasil Perbaikan' },
 			{ key: '/teknisi', icon: <TeamOutlined style={{ fontSize: 18 }} />, label: labelMenu.teknisi },
 			{ key: '/biodata', icon: <UserOutlined style={{ fontSize: 18 }} />, label: 'Biodata' },

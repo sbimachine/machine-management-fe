@@ -14,10 +14,12 @@ export default function HasilPerbaikanTable() {
 	const { perbaikan: perbaikanState, setPerbaikanTable, setPerbaikan } = useStore();
 	const { table } = perbaikanState;
 
+	const extendParams = React.useMemo(() => ({ ...table.filter, isProceed: true }), [table.filter]);
+
 	const [kategori, perbaikan] = useQueries({
 		queries: [
 			{ queryKey: ['kategori'], queryFn: browseKategori },
-			{ queryKey: ['perbaikan', table.filter], queryFn: browsePerbaikan },
+			{ queryKey: ['perbaikan', extendParams], queryFn: browsePerbaikan },
 		],
 	});
 
@@ -90,17 +92,12 @@ export default function HasilPerbaikanTable() {
 		onShowSizeChange: handleSizeChange,
 	};
 
-	const filterPerbaikan = React.useMemo(() => {
-		const selectedStatus = ['Menunggu Konfirmasi', 'Proses Perbaikan'];
-		return perbaikan.data?.repairments.filter(({ status }) => !selectedStatus.includes(status));
-	}, [perbaikan]);
-
 	return (
 		<Flex vertical gap={25} style={{ width: '100%', height: '100%' }}>
 			<Table
 				loading={perbaikan.isLoading || kategori.isLoading}
 				columns={columns}
-				dataSource={filterPerbaikan}
+				dataSource={perbaikan.data?.repairments}
 				onChange={handleTableChange}
 				pagination={paginationOptions}
 				scroll={{ x: 'max-content' }}

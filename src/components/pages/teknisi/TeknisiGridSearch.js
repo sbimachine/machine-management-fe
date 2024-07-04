@@ -1,5 +1,5 @@
 import { useStore } from '@/states';
-import _ from 'lodash';
+import { debounce } from 'lodash';
 import * as React from 'react';
 
 import { SearchOutlined } from '@ant-design/icons';
@@ -12,7 +12,7 @@ export default function TeknisiGridSearch({ loading, selectBox = false }) {
 	const { filter, localFilter } = teknisi.table;
 
 	const debounceFilter = React.useMemo(
-		() => _.debounce(({ key, value }) => setTeknisiTable({ filter: { ...filter, [key]: value } }), 500),
+		() => debounce(({ key, value }) => setTeknisiTable({ filter: { ...filter, [key]: value } }), 500),
 		[filter, setTeknisiTable]
 	);
 

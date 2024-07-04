@@ -1,9 +1,9 @@
+import { capitalize, startCase } from 'lodash';
+import { signOut, useSession } from 'next-auth/react';
 import * as React from 'react';
-import { useSession, signOut } from 'next-auth/react';
-import _ from 'lodash';
 
-import { Avatar, Button, Flex, Dropdown, Typography, Modal } from 'antd';
-import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined } from '@ant-design/icons';
+import { Avatar, Button, Dropdown, Flex, Modal, Typography } from 'antd';
 
 export default function UsersAvatar() {
 	const [modal, contextHolder] = Modal.useModal();
@@ -32,8 +32,8 @@ export default function UsersAvatar() {
 	return (
 		<Flex align='center' gap='10px' style={{ paddingRight: '20px' }}>
 			<Flex vertical align='flex-end'>
-				<Typography.Text style={{ fontWeight: 700, lineHeight: 1 }}>{_.startCase(fullname)}</Typography.Text>
-				<Typography.Text italic>{_.capitalize(role)}</Typography.Text>
+				<Typography.Text style={{ fontWeight: 700, lineHeight: 1 }}>{startCase(fullname)}</Typography.Text>
+				<Typography.Text italic>{capitalize(role)}</Typography.Text>
 			</Flex>
 			<Dropdown menu={{ items: userMenu, onClick: onClickMenu }} trigger={['click']}>
 				<Button type='text' shape='circle' style={{ padding: 0, width: 'fit-content', height: 'fit-content' }}>

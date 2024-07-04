@@ -2,25 +2,47 @@ import { addPerbaikan, assignPerbaikan, getPerbaikanById, updatePerbaikan, updat
 import { useStore } from '@/states';
 import { getBase64 } from '@/utils/base64';
 import { useUser } from '@/utils/hooks';
-import { pickObject } from '@/utils/object';
-import { parseDate, parseFormData, parseFormFile } from '@/utils/parse';
+import { getMimeTypes } from '@/utils/mimeTypes';
+import { omitObject, pickObject } from '@/utils/object';
+import { getDate, parseDate, parseFormData, parseFormFile } from '@/utils/parse';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isEqual } from 'lodash';
 import * as React from 'react';
 
 import PerbaikanFormSelectMesin from '@/components/pages/perbaikan/PerbaikanFormSelectMesin';
 import PerbaikanFormSelectTeknisi from '@/components/pages/perbaikan/PerbaikanFormSelectTeknisi';
 import { CheckOutlined, CloseOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
-import { Button, ConfigProvider, DatePicker, Flex, Form, Image, Input, notification, Select, Upload } from 'antd';
+import {
+	Button,
+	ConfigProvider,
+	DatePicker,
+	Empty,
+	Flex,
+	Form,
+	Image,
+	Input,
+	notification,
+	Select,
+	Skeleton,
+	theme,
+	Upload,
+} from 'antd';
 
 export default function PerbaikanForm({ form, onCancel }) {
 	const [submitLoading, setSubmitLoading] = React.useState(false);
 	const [imagePreview, setImagePreview] = React.useState(null);
 	const [previewVisible, setPreviewVisible] = React.useState(false);
+	const { token } = theme.useToken();
 
 	const [notif, notifContext] = notification.useNotification();
 	const { perbaikan, setPerbaikan } = useStore();
 	const queryClient = useQueryClient();
 	const user = useUser();
+
+	React.useEffect(() => {
+		if (perbaikan.formType === 'add') form.setFieldsValue({ repairmentDate: getDate(new Date()) });
+		else form.setFieldsValue({ repairmentDate: undefined });
+	}, [form, perbaikan.formType]);
 
 	const isGetPerbaikanById = React.useMemo(() => {
 		const { formType, selectedData } = perbaikan;
@@ -45,21 +67,18 @@ export default function PerbaikanForm({ form, onCancel }) {
 			try {
 				const { selectedData } = perbaikan;
 				const data = await getPerbaikanById(selectedData?.id);
-				const { id, repairmentDate, userId, description, status, machine, images } = data;
-				const parsedImages =
-					userId && images?.length > 0
-						? images.map((image, i) => {
-								return parseFormFile({
-									image: { urls: [image.imageUrl], filename: `Laporan Perbaikan #${i + 1}` },
-								}).image[0];
-							})
+				const { id, repairmentDate, userId, description, status, category, machine, reportedImages } = data;
+				const parsedReportedImages =
+					reportedImages?.length > 0
+						? parseFormFile({ images: { urls: reportedImages.map(({ imageUrl }) => imageUrl), filename: `Kerusakan` } })
 						: [];
 				const fieldData = {
 					userId,
 					machineId: machine.machineId,
 					repairmentDate: parseDate(repairmentDate, true),
-					images: parsedImages,
+					category,
 					status,
+					...parsedReportedImages,
 				};
 				setPerbaikan({ selectedData: data });
 				form.setFieldsValue({ id, description, ...fieldData });
@@ -93,29 +112,49 @@ export default function PerbaikanForm({ form, onCancel }) {
 	const onSubmit = (value) => {
 		setSubmitLoading(true);
 		if (perbaikan.formType === 'add') {
-			const parsedData = parseFormData(value, { datePicker: ['repairmentDate'] });
-			queryMutation.mutate(parsedData);
+			const { images, ...parsedData } = parseFormData(value, { datePicker: ['repairmentDate'], multipleFile: ['images'] });
+			const formData = new FormData();
+			Object.entries(parsedData).forEach(([key, value]) => formData.append(key, value));
+			images.forEach((image) => formData.append('images', image));
+			queryMutation.mutate(formData);
 		} else {
-			const { id, repairmentDate, userId, description, machine, status } = perbaikan.selectedData;
+			const {
+				id,
+				repairmentDate,
+				userId,
+				description,
+				machine,
+				category: categoryKerusakan,
+				reportedImages: images,
+				status: statusPerbaikan,
+			} = perbaikan.selectedData;
+			const files = parseFormFile({ images: { urls: images.map(({ imageUrl }) => imageUrl), filename: `Kerusakan` } });
+			const status = userId ? { status: statusPerbaikan } : {};
+			const category = categoryKerusakan ? { category: categoryKerusakan } : {};
 			const previousData = {
 				id,
 				userId,
 				description,
 				machineId: machine.machineId,
 				repairmentDate: parseDate(repairmentDate, true),
-				status,
+				...category,
+				...status,
+				...files,
 			};
-			const checkData = _.isEqual(previousData, value);
+			const checkData = isEqual(previousData, value);
 			if (!checkData) {
 				const { id: _id, ...others } = value;
-				const parsedData = parseFormData(others, { datePicker: ['repairmentDate'] });
+				const parsedData = parseFormData(others, { datePicker: ['repairmentDate'], multipleFile: ['images'] });
 				const newData =
 					user?.role === 'leader'
 						? userId
 							? pickObject(parsedData, ['status'])
 							: pickObject(parsedData, ['userId'])
-						: parsedData;
-				queryMutation.mutate({ id, newData });
+						: omitObject(parsedData, ['images']);
+				const formData = new FormData();
+				Object.entries(newData).forEach(([key, value]) => formData.append(key, value));
+				console.table([...formData]);
+				queryMutation.mutate({ id, newData: formData });
 			} else {
 				notif.info({ message: 'Tidak ada perubahan', description: 'Data Laporan Perbaikan Tidak Berubah' });
 				setSubmitLoading(false);
@@ -127,6 +166,14 @@ export default function PerbaikanForm({ form, onCancel }) {
 	const normFile = (e) => {
 		if (Array.isArray(e)) return e;
 		return e?.fileList;
+	};
+
+	const validateBefore = (mimeTypes, errors) => (file) => {
+		const mimeTypesArr = getMimeTypes(mimeTypes).split(',');
+		const mimeTypesMsg = mimeTypesArr.filter((mime) => mime.startsWith('.')).join(', ');
+		const checkFileType = mimeTypesArr.includes(file.type);
+		if (!checkFileType) form.setFields(errors.map((name) => ({ name, errors: [`File harus bertipe ${mimeTypesMsg}`] })));
+		return checkFileType || Upload.LIST_IGNORE;
 	};
 
 	const onPreview = async (file) => {
@@ -199,23 +246,49 @@ export default function PerbaikanForm({ form, onCancel }) {
 					<Input.TextArea placeholder='Masukkan keterangan' rows={3} disabled={disabledForm} allowClear />
 				</Form.Item>
 
+				{/* Category */}
+				{user?.role === 'leader' && !perbaikan?.selectedData?.userId ? (
+					<Form.Item
+						name='category'
+						label='Kategori Kerusakan'
+						rules={[{ required: true, message: 'Harap pilih kategori kerusakan' }]}
+					>
+						<Select
+							placeholder='Pilih kategori mesin'
+							options={[
+								{ value: 'Berat', label: 'Berat' },
+								{ value: 'Ringan', label: 'Ringan' },
+							]}
+							disabled={disabledProduksiForm}
+							allowClear
+						/>
+					</Form.Item>
+				) : null}
+
 				{/* Teknisi */}
 				{user?.role === 'leader' && !perbaikan?.selectedData?.userId ? (
 					<PerbaikanFormSelectTeknisi loading={perbaikanById.isFetching} disabled={disabledProduksiForm} />
 				) : null}
 
-				{/* Image */}
-				{user?.role === 'leader' && perbaikan?.selectedData?.userId ? (
+				{/* Reported Image */}
+				{user?.role !== 'leader' ? (
 					<>
 						<Form.Item
 							name='images'
-							label='Gambar'
+							label='Foto Kerusakan'
 							valuePropName='fileList'
 							getValueFromEvent={normFile}
-							rules={[{ type: 'array', required: true, message: 'Harap pilih gambar!' }]}
+							rules={[{ type: 'array', required: true, message: 'Harap pilih foto!' }]}
 						>
-							<Upload name='image' listType='picture' onPreview={onPreview} disabled>
-								<Button icon={<UploadOutlined />} disabled>
+							<Upload
+								name='images'
+								listType='picture'
+								accept={getMimeTypes('images')}
+								beforeUpload={validateBefore('images', ['images'])}
+								onPreview={onPreview}
+								multiple
+							>
+								<Button icon={<UploadOutlined />} disabled={disabledProduksiForm}>
 									Pilih Gambar
 								</Button>
 							</Upload>
@@ -250,6 +323,62 @@ export default function PerbaikanForm({ form, onCancel }) {
 						/>
 					</Form.Item>
 				) : null}
+
+				<Flex gap={20} style={{ marginBottom: '25px' }}>
+					{/* Reported Images Preview */}
+					{user?.role === 'leader' ? (
+						<Flex vertical gap={5} style={{ width: '100%' }}>
+							<span style={{ fontWeight: 600, fontSize: '16px', lineHeight: 1.5 }}>Foto Laporan Kerusakan</span>
+							{!perbaikanById.isFetching ? (
+								<>
+									{perbaikanById.data?.reportedImages?.length > 0 ? (
+										<>
+											<Image.PreviewGroup items={perbaikanById.data?.reportedImages?.map((image) => image.imageUrl)}>
+												<Image
+													width='100%'
+													src={perbaikanById.data?.reportedImages[0]?.imageUrl}
+													alt='Foto Laporan Kerusakan'
+												/>
+											</Image.PreviewGroup>
+											<span style={{ color: token.colorTextDescription }}>Klik untuk melihat semua gambar</span>
+										</>
+									) : (
+										<Flex justify='center' align='center' style={{ height: '100%', paddingTop: 20, paddingBottom: 20 }}>
+											<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ margin: 0 }} description='Foto belum tersedia' />
+										</Flex>
+									)}
+								</>
+							) : (
+								<Skeleton loading={perbaikanById.isFetching} title={null} paragraph={{ rows: 5 }} active />
+							)}
+						</Flex>
+					) : null}
+
+					{/* Images Preview */}
+					{user?.role === 'leader' ? (
+						<Flex vertical gap={5} style={{ width: '100%' }}>
+							<span style={{ fontWeight: 600, fontSize: '16px', lineHeight: 1.5 }}>Foto Laporan Perbaikan</span>
+							{!perbaikanById.isFetching ? (
+								<>
+									{perbaikanById.data?.images?.length > 0 ? (
+										<>
+											<Image.PreviewGroup items={perbaikanById.data?.images?.map((image) => image.imageUrl)}>
+												<Image width='100%' src={perbaikanById.data?.images[0]?.imageUrl} alt='Foto Laporan Perbaikan' />
+											</Image.PreviewGroup>
+											<span style={{ color: token.colorTextDescription }}>Klik untuk melihat semua gambar</span>
+										</>
+									) : (
+										<Flex justify='center' align='center' style={{ height: '100%', paddingTop: 20, paddingBottom: 20 }}>
+											<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ margin: 0 }} description='Foto belum tersedia' />
+										</Flex>
+									)}
+								</>
+							) : (
+								<Skeleton loading={perbaikanById.isFetching} title={null} paragraph={{ rows: 5 }} active />
+							)}
+						</Flex>
+					) : null}
+				</Flex>
 
 				{/* Button Action */}
 				<Form.Item style={{ marginBottom: 10 }}>

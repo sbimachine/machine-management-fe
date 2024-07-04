@@ -4,7 +4,7 @@ import { useStore } from '@/states';
 import { pickObject } from '@/utils/object';
 import { parseFormData } from '@/utils/parse';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import _ from 'lodash';
+import { isEqual, lowerCase, startCase } from 'lodash';
 import * as React from 'react';
 
 import { CheckOutlined, CloseOutlined, LockOutlined, PlusOutlined } from '@ant-design/icons';
@@ -43,10 +43,10 @@ export default function TeknisiForm({ form, onCancel }) {
 		if (teknisi.formType === 'add') {
 			const { firstName, lastName } = value;
 			const parsedData = parseFormData(value);
-			queryMutation.mutate({ ...parsedData, username: _.lowerCase(`${firstName}${lastName}`) });
+			queryMutation.mutate({ ...parsedData, username: lowerCase(`${firstName}${lastName}`) });
 		} else {
 			const selectedData = pickObject(value, ['id', 'firstName', 'lastName', 'role']);
-			const checkData = _.isEqual(pickObject(teknisi.selectedData, ['id', 'firstName', 'lastName', 'role']), selectedData);
+			const checkData = isEqual(pickObject(teknisi.selectedData, ['id', 'firstName', 'lastName', 'role']), selectedData);
 			if (!checkData) {
 				const { id, ...others } = selectedData;
 				const parsedData = parseFormData(others);
@@ -93,7 +93,7 @@ export default function TeknisiForm({ form, onCancel }) {
 				<Form.Item name='role' label='Role' rules={[{ required: true, message: 'Harap pilih role karyawan' }]}>
 					<Select
 						placeholder='Pilih kategori karyawan'
-						options={Object.keys(roles).map((item) => ({ value: item, label: _.startCase(item) }))}
+						options={Object.keys(roles).map((item) => ({ value: item, label: startCase(item) }))}
 						disabled={submitLoading}
 						allowClear
 					/>

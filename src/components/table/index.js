@@ -1,6 +1,6 @@
 import { useStore } from '@/states';
 import { omitObject } from '@/utils/object';
-import _ from 'lodash';
+import { debounce, startCase } from 'lodash';
 
 import { RenderFilterExist, RenderFilterNotExist } from '@/components/table/RenderFilterHighlighter';
 import RenderFilterInput from '@/components/table/RenderFilterInput';
@@ -21,9 +21,9 @@ export function ColumnProps(props) {
 	} = props;
 	const state = useStore.getState();
 	const table = state[slice].table;
-	const setTable = (newData) => state[`set${_.startCase(slice)}Table`](newData);
+	const setTable = (newData) => state[`set${startCase(slice)}Table`](newData);
 
-	const debounceFilter = _.debounce(({ value, key }) => {
+	const debounceFilter = debounce(({ value, key }) => {
 		setTable({ filter: { ...table.filter, [key]: value } });
 	}, 500);
 

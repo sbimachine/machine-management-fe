@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { isEqual, pickBy } from 'lodash';
 
 export function pickObject(obj, keys) {
 	return keys.reduce((acc, curr) => {
@@ -24,5 +24,5 @@ export function renameObjectKeys(obj, newKeys) {
 }
 
 export function getDiffObject(obj1, obj2) {
-	return _.pickBy(obj2, (value, key) => !_.isEqual(obj1[key], value));
+	return pickBy(obj2, (value, key) => !isEqual(obj1[key], value));
 }

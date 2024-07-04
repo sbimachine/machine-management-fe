@@ -1,14 +1,21 @@
 import { getPerbaikanById } from '@/requests';
 import { useStore } from '@/states';
+import { useUser } from '@/utils/hooks';
 import { useQuery } from '@tanstack/react-query';
 import * as React from 'react';
 
 import PerbaikanDetail from '@/components/pages/perbaikan/PerbaikanDetail';
-import { Flex, Modal, Skeleton, notification } from 'antd';
+import { Flex, Modal, notification } from 'antd';
 
 export default function PerbaikanDetailModal({ isDone = false }) {
 	const [notif, notifContext] = notification.useNotification();
 	const { perbaikan, setPerbaikan } = useStore();
+	const user = useUser();
+
+	const dynamicTitle = React.useMemo(() => {
+		if (user?.role === 'produksi') return 'Kerusakan';
+		return 'Perbaikan';
+	}, [user]);
 
 	const isGetPerbaikanById = React.useMemo(() => {
 		const { formType, selectedData } = perbaikan;
@@ -44,17 +51,15 @@ export default function PerbaikanDetailModal({ isDone = false }) {
 
 	return (
 		<Modal
-			title={`Detail ${isDone ? 'Hasil ' : ' '}Laporan Perbaikan`}
+			title={`Detail ${isDone ? 'Hasil ' : ' '}${dynamicTitle}`}
 			open={perbaikan.modalShowVisible}
 			onCancel={onCancel}
-			width={400}
+			width={500}
 			footer={null}
 			centered
 		>
 			<Flex style={{ padding: '10px 0' }} gap={20} vertical>
-				<Skeleton loading={perbaikanById.isFetching} title={null} paragraph={{ rows: 8 }} active>
-					<PerbaikanDetail />
-				</Skeleton>
+				<PerbaikanDetail loading={perbaikanById.isFetching} />
 			</Flex>
 
 			{notifContext}

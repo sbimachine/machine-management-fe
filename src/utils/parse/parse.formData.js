@@ -39,7 +39,7 @@ export const parseFormFile = (files) => {
 				? files[curr].urls.map((url, i) => {
 						const { filename } = files[curr];
 						const fullname = url.split('/').pop().split('.');
-						return { uid: fullname[0], status: 'done', name: `Gambar ${filename || 'Mesin'}.${fullname[1]}`, url };
+						return { uid: fullname[0], status: 'done', name: `Gambar ${filename || 'Mesin'} #${i + 1}.${fullname[1]}`, url };
 					})
 				: null,
 		};

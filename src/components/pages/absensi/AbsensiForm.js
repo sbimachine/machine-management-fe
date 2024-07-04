@@ -52,7 +52,6 @@ export default function PerbaikanForm({ form, onCancel }) {
 						placeholder='Pilih status Absensi'
 						options={[
 							{ value: 'present', label: 'Hadir' },
-							{ value: 'leave', label: 'Cuti' },
 							{ value: 'sick', label: 'Sakit' },
 						]}
 						disabled={submitLoading}

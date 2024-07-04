@@ -1,9 +1,10 @@
 import { addMesin, updateMesin } from '@/requests';
 import { useStore } from '@/states';
 import { getBase64 } from '@/utils/base64';
+import { getMimeTypes } from '@/utils/mimeTypes';
 import { parseFormData } from '@/utils/parse';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import _ from 'lodash';
+import { isEqual } from 'lodash';
 import * as React from 'react';
 
 import { CheckOutlined, CloseOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
@@ -46,6 +47,14 @@ export default function MesinForm({ form, onCancel }) {
 		return e?.fileList;
 	};
 
+	const validateBefore = (mimeTypes, errors) => (file) => {
+		const mimeTypesArr = getMimeTypes(mimeTypes).split(',');
+		const mimeTypesMsg = mimeTypesArr.filter((mime) => mime.startsWith('.')).join(', ');
+		const checkFileType = mimeTypesArr.includes(file.type);
+		if (!checkFileType) form.setFields(errors.map((name) => ({ name, errors: [`File harus bertipe ${mimeTypesMsg}`] })));
+		return checkFileType || Upload.LIST_IGNORE;
+	};
+
 	const onPreview = async (file) => {
 		if (!file.url && !file.preview) file.preview = await getBase64(file.originFileObj);
 		setImagePreview(file.url || file.preview);
@@ -60,7 +69,7 @@ export default function MesinForm({ form, onCancel }) {
 			Object.entries(parsedData).forEach(([key, value]) => formData.append(key, value));
 			queryMutation.mutate(formData);
 		} else {
-			const checkData = _.isEqual(mesin.selectedData, value);
+			const checkData = isEqual(mesin.selectedData, value);
 			if (!checkData) {
 				const { id, ...others } = value;
 				const parsedData = parseFormData(others, { datePicker: ['buyDate'], file: ['image'] });
@@ -91,7 +100,14 @@ export default function MesinForm({ form, onCancel }) {
 					getValueFromEvent={normFile}
 					rules={[{ type: 'array', required: true, message: 'Harap pilih gambar!' }]}
 				>
-					<Upload name='image' listType='picture' onPreview={onPreview} maxCount={1}>
+					<Upload
+						name='image'
+						listType='picture'
+						accept={getMimeTypes('images')}
+						beforeUpload={validateBefore('images', ['image'])}
+						onPreview={onPreview}
+						maxCount={1}
+					>
 						<Button icon={<UploadOutlined />} disabled={watchImage?.length > 0}>
 							Pilih Gambar
 						</Button>

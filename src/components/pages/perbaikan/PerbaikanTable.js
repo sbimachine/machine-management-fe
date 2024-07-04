@@ -16,10 +16,12 @@ export default function PerbaikanTable() {
 	const { table } = perbaikanState;
 	const user = useUser();
 
+	const extendParams = React.useMemo(() => ({ ...table.filter, isNotProceed: true }), [table.filter]);
+
 	const [kategori, perbaikan] = useQueries({
 		queries: [
 			{ queryKey: ['kategori'], queryFn: browseKategori },
-			{ queryKey: ['perbaikan', table.filter], queryFn: browsePerbaikan },
+			{ queryKey: ['perbaikan', extendParams], queryFn: browsePerbaikan },
 		],
 	});
 
@@ -99,13 +101,15 @@ export default function PerbaikanTable() {
 						onClick={() => onSetForm(data, 'update')}
 						disabled={updateBtnDisabled(data)}
 					/>
-					<Button
-						type='primary'
-						icon={<DeleteOutlined />}
-						onClick={() => onSetForm(data, 'delete')}
-						disabled={data.status !== 'Menunggu Konfirmasi' || ['supervisior', 'leader'].includes(user?.role)}
-						danger
-					/>
+					{user?.role === 'produksi' ? (
+						<Button
+							type='primary'
+							icon={<DeleteOutlined />}
+							onClick={() => onSetForm(data, 'delete')}
+							disabled={data.status !== 'Menunggu Konfirmasi'}
+							danger
+						/>
+					) : null}
 				</Flex>
 			),
 		},
@@ -122,11 +126,6 @@ export default function PerbaikanTable() {
 		onShowSizeChange: handleSizeChange,
 	};
 
-	const filterPerbaikan = React.useMemo(() => {
-		const selectedStatus = ['Menunggu Konfirmasi', 'Proses Perbaikan'];
-		return perbaikan.data?.repairments.filter(({ status }) => selectedStatus.includes(status));
-	}, [perbaikan]);
-
 	return (
 		<Flex vertical gap={25} style={{ width: '100%', height: '100%' }}>
 			{!['supervisior', 'leader'].includes(user?.role) ? (
@@ -137,7 +136,7 @@ export default function PerbaikanTable() {
 						icon={<FileAddOutlined />}
 						onClick={() => setPerbaikan({ modalAddVisible: true })}
 					>
-						Tambah Laporan
+						Tambah Laporan Permasalahan
 					</Button>
 				</Flex>
 			) : null}
@@ -145,7 +144,7 @@ export default function PerbaikanTable() {
 			<Table
 				loading={perbaikan.isLoading || kategori.isLoading}
 				columns={columns}
-				dataSource={filterPerbaikan}
+				dataSource={perbaikan.data?.repairments}
 				onChange={handleTableChange}
 				pagination={paginationOptions}
 				scroll={{ x: 'max-content' }}

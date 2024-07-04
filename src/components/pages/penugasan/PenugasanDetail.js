@@ -1,6 +1,7 @@
 import { useStore } from '@/states';
 import { pickObject } from '@/utils/object';
 import { parseDate } from '@/utils/parse';
+import { startCase } from 'lodash';
 import * as React from 'react';
 
 import StatusPerbaikanTags from '@/components/flags/StatusPerbaikanTags';
@@ -20,7 +21,7 @@ export default function PenugasanDetail() {
 				Kategori: <Tag>{getData.machine.category.categoryName}</Tag>,
 				Status: <StatusPerbaikanTags value={getData.status} />,
 				'Tanggal Kerusakan': parseDate(getData.repairmentDate, true)?.format('DD-MM-YYYY'),
-				...(getData.userId ? { 'Nama Teknisi': _.startCase(`${getData.firstName} ${getData.lastName}`) } : {}),
+				...(getData.userId ? { 'Nama Teknisi': startCase(`${getData.firstName} ${getData.lastName}`) } : {}),
 				Keterangan: getData.description,
 			};
 			return Object.entries(reshapedData).map(([key, value], i) => ({ key: i + 1, label: key, children: value || '-' }));

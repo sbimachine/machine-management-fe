@@ -1,5 +1,5 @@
 import { useStore } from '@/states';
-import _ from 'lodash';
+import { debounce } from 'lodash';
 import * as React from 'react';
 
 import { SearchOutlined } from '@ant-design/icons';
@@ -13,7 +13,7 @@ export default function MesinGridSearch({ loading, selectBox = false }) {
 	const { kategori } = getKategori;
 
 	const debounceFilter = React.useMemo(
-		() => _.debounce(({ key, value }) => setMesinTable({ filter: { ...filter, [key]: value } }), 500),
+		() => debounce(({ key, value }) => setMesinTable({ filter: { ...filter, [key]: value } }), 500),
 		[filter, setMesinTable]
 	);
 

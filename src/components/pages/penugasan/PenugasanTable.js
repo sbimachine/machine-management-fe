@@ -16,10 +16,15 @@ export default function PenugasanTable() {
 	const { table } = penugasanState;
 	const user = useUser();
 
+	const extendParams = React.useMemo(
+		() => ({ ...table.filter, userId: user?.id, isNotProceed: true }),
+		[table.filter, user?.id]
+	);
+
 	const [kategori, penugasan] = useQueries({
 		queries: [
 			{ queryKey: ['kategori'], queryFn: browseKategori },
-			{ queryKey: ['penugasan', { ...table.filter, userId: user?.id }], queryFn: browsePenugasan },
+			{ queryKey: ['penugasan', extendParams], queryFn: browsePenugasan },
 		],
 	});
 
@@ -101,16 +106,12 @@ export default function PenugasanTable() {
 		onShowSizeChange: handleSizeChange,
 	};
 
-	const filterPerbaikan = React.useMemo(() => {
-		return penugasan.data?.repairments.filter(({ status }) => status === 'Proses Perbaikan');
-	}, [penugasan]);
-
 	return (
 		<Flex vertical gap={25} style={{ width: '100%', height: '100%' }}>
 			<Table
 				loading={penugasan.isLoading || kategori.isLoading}
 				columns={columns}
-				dataSource={filterPerbaikan}
+				dataSource={penugasan.data?.repairments}
 				onChange={handleTableChange}
 				pagination={paginationOptions}
 				scroll={{ x: 'max-content' }}

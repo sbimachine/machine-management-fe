@@ -3,7 +3,7 @@ import { useStore } from '@/states';
 import { getDate } from '@/utils/parse';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import _ from 'lodash';
+import { startCase } from 'lodash';
 import * as React from 'react';
 
 import TeknisiGridPagination from '@/components/pages/teknisi/TeknisiGridPagination';
@@ -35,7 +35,7 @@ export default function PerbaikanFormSelectTeknisi({ loading, disabled }) {
 	React.useEffect(() => {
 		if (perbaikan?.selectedData?.machine) {
 			const { userId, fistName, lastName } = perbaikan.selectedData;
-			setSelectedTeknisi(userId ? [{ value: userId, label: _.startCase(`${fistName} ${lastName}`) }] : []);
+			setSelectedTeknisi(userId ? [{ value: userId, label: startCase(`${fistName} ${lastName}`) }] : []);
 		}
 	}, [perbaikan, setSelectedTeknisi]);
 
@@ -65,7 +65,7 @@ export default function PerbaikanFormSelectTeknisi({ loading, disabled }) {
 				options={
 					teknisi.data?.attendances?.map((item) => ({
 						value: item.user_id,
-						label: _.startCase(`${item.firstName} ${item.lastName}`),
+						label: startCase(`${item.firstName} ${item.lastName}`),
 					})) || selectedTeknisi
 				}
 				disabled={disabled}

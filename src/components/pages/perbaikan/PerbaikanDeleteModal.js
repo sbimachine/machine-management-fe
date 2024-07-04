@@ -1,11 +1,12 @@
 import { deletePerbaikan, getPerbaikanById } from '@/requests';
 import { useStore } from '@/states';
+import { useUser } from '@/utils/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
 import PerbaikanDetail from '@/components/pages/perbaikan/PerbaikanDetail';
 import { CloseOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Button, Flex, Modal, Skeleton, notification } from 'antd';
+import { Button, Flex, Modal, notification } from 'antd';
 
 export default function PerbaikanDeleteModal() {
 	const [deleteLoading, setDeleteLoading] = React.useState(false);
@@ -13,6 +14,12 @@ export default function PerbaikanDeleteModal() {
 	const [notif, notifContext] = notification.useNotification();
 	const { perbaikan, setPerbaikan } = useStore();
 	const queryClient = useQueryClient();
+	const user = useUser();
+
+	const dynamicTitle = React.useMemo(() => {
+		if (user?.role === 'produksi') return 'Kerusakan';
+		return 'Perbaikan';
+	}, [user]);
 
 	const isGetPerbaikanById = React.useMemo(() => {
 		const { formType, selectedData } = perbaikan;
@@ -67,7 +74,7 @@ export default function PerbaikanDeleteModal() {
 
 	return (
 		<Modal
-			title='Hapus Laporan Perbaikan'
+			title={`Hapus Laporan ${dynamicTitle}`}
 			open={perbaikan.modalDeleteVisible}
 			onOk={onDelete}
 			onCancel={onCancel}
@@ -97,10 +104,8 @@ export default function PerbaikanDeleteModal() {
 			centered
 		>
 			<Flex style={{ padding: '10px 0' }} gap={20} vertical>
-				<Skeleton loading={perbaikanById.isFetching} title={null} paragraph={{ rows: 8 }} active>
-					<p style={{ margin: 0 }}>Apakah anda yakin ingin menghapus laporan perbaikan ini?</p>
-					<PerbaikanDetail />
-				</Skeleton>
+				<p style={{ margin: 0 }}>Apakah anda yakin ingin menghapus laporan {dynamicTitle.toLowerCase()} ini?</p>
+				<PerbaikanDetail loading={perbaikanById.isFetching} dynamicTitle={dynamicTitle} type='delete' />
 			</Flex>
 
 			{notifContext}
