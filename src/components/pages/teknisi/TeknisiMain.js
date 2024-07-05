@@ -18,7 +18,7 @@ export default function TeknisiMain() {
 	}, [user]);
 
 	return (
-		<Flex vertical gap={20} style={{ position: 'relative', height: '100%' }}>
+		<Flex vertical gap={20} style={{ height: '100%' }}>
 			{/* Page Title */}
 			<h2 style={{ margin: 0 }}>{pageTitle}</h2>
 

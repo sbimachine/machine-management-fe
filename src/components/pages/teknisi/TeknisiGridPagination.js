@@ -10,9 +10,11 @@ export default function TeknisiGridPagination({ loading, selectBox = false }) {
 		setTeknisiTable({ pagination: { ...pagination, current: page, pageSize: limit } });
 	};
 
-	const divStyle = !selectBox
-		? { position: 'absolute', bottom: 0, right: 0 }
-		: { display: 'flex', justifyContent: 'flex-end', width: '100%' };
+	const divStyle = {
+		display: 'flex',
+		justifyContent: 'flex-end',
+		...(selectBox ? { width: '100%' } : {}),
+	};
 
 	return (
 		<div style={divStyle}>

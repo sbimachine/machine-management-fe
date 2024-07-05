@@ -53,16 +53,18 @@ export default function TeknisiGrid() {
 			</Flex>
 
 			{/* Grid */}
-			<Skeleton loading={teknisi.isLoading} title={null} paragraph={{ rows: 12 }} active>
-				{teknisi.data?.users?.length > 0 ? (
-					<List
-						size='large'
-						itemLayout='horizontal'
-						dataSource={teknisi.data.users}
-						renderItem={(item, i) => <TeknisiCard item={item} key={i} />}
-					/>
-				) : null}
-			</Skeleton>
+			<Flex vertical style={{ flex: 1 }}>
+				<Skeleton loading={teknisi.isLoading} title={null} paragraph={{ rows: 12 }} active>
+					{teknisi.data?.users?.length > 0 ? (
+						<List
+							size='large'
+							itemLayout='horizontal'
+							dataSource={teknisi.data.users}
+							renderItem={(item, i) => <TeknisiCard item={item} key={i} />}
+						/>
+					) : null}
+				</Skeleton>
+			</Flex>
 
 			{/* Pagination */}
 			<TeknisiGridPagination loading={teknisi.isLoading} />

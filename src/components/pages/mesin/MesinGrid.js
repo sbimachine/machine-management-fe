@@ -35,7 +35,7 @@ export default function MesinGrid() {
 	}, [mesin, mesinState, reshapedFilter]);
 
 	return (
-		<Flex vertical gap={25} style={{ width: '100%' }}>
+		<Flex vertical gap={25} style={{ height: '100%', width: '100%' }}>
 			<Flex justify='space-between'>
 				{/* Search Form */}
 				<MesinGridSearch loading={mesin.isLoading || kategori.isLoading} />
@@ -54,7 +54,7 @@ export default function MesinGrid() {
 			</Flex>
 
 			{/* Cards */}
-			<Flex vertical style={{ flexBasis: '100%' }}>
+			<Flex vertical style={{ flex: 1 }}>
 				<Skeleton loading={mesin.isLoading || kategori.isLoading} title={null} paragraph={{ rows: 12 }} active>
 					{mesin.data?.machines?.length > 0 ? (
 						<Row gutter={[16, 16]}>
