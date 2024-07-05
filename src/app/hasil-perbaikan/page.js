@@ -14,7 +14,6 @@ export default async function HasilPerbaikan() {
 	const session = await auth();
 	const role = session?.user?.role;
 
-	if (role === 'produksi') return redirect('/mesin');
 	if (role === 'teknisi') return redirect('/absensi');
 	return (
 		<SessionProvider session={session}>

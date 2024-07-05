@@ -35,7 +35,9 @@ export default function TeknisiCard({ item }) {
 
 	const actionBtn = React.useMemo(
 		() => ({
-			show: <Button type='primary' icon={<EyeOutlined />} onClick={() => onSetData('show')} />,
+			show: (
+				<Button type='primary' icon={<EyeOutlined />} onClick={() => onSetData('show')} disabled={item.role !== 'teknisi'} />
+			),
 			edit: <Button type='primary' icon={<EditOutlined />} onClick={() => onSetData('update')} />,
 			delete: <Button type='primary' icon={<DeleteOutlined />} onClick={() => onSetData('delete')} danger />,
 		}),

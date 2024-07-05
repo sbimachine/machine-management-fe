@@ -25,7 +25,7 @@ export default function PenugasanFormModal() {
 	};
 
 	return (
-		<Modal title={checkFormType.title} open={checkFormType.visible} onCancel={onCancel} width={450} footer={null} centered>
+		<Modal title={checkFormType.title} open={checkFormType.visible} onCancel={onCancel} width={500} footer={null} centered>
 			<div style={{ paddingTop: 10 }}>
 				<PenugasanForm form={form} onCancel={onCancel} />
 			</div>

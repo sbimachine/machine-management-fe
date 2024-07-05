@@ -1,6 +1,6 @@
 import { useStore } from '@/states';
 import { api } from '@/utils/api';
-import { getDate } from '@/utils/parse';
+import { parseDate } from '@/utils/parse';
 import dayjs from 'dayjs';
 
 export async function browseTeknisi({ queryKey }) {
@@ -32,7 +32,7 @@ export async function browseTeknisiPresent({ queryKey }) {
 			filter: {
 				...teknisi.table.filter,
 				role: 'teknisi',
-				date: getDate.tz(dayjs(), 'America/New_York').format('YYYY-MM-DD'),
+				date: parseDate(dayjs(), true).format('YYYY-MM-DD'),
 			},
 			pagination: {
 				...teknisi.table.pagination,

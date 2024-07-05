@@ -7,6 +7,12 @@ export const parseFormData = (data, groupFields = {}) => {
 				if (groupFields.hasOwnProperty('datePicker') && groupFields['datePicker']?.includes(current)) {
 					return { ...previous, [current]: data[current] ? parseDate(data[current]) : null };
 				}
+				if (groupFields.hasOwnProperty('datetimePicker') && groupFields['datetimePicker']?.includes(current)) {
+					return {
+						...previous,
+						[current]: data[current] ? parseDate(data[current], true).format('DD-MM-YYYY HH:mm') : null,
+					};
+				}
 				if (groupFields.hasOwnProperty('rangePicker') && groupFields['rangePicker']?.includes(current)) {
 					const [startDate, endDate] = data[current];
 					const checkStartDate = startDate ? parseDate(startDate) : null;

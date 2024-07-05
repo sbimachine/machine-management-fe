@@ -1,6 +1,6 @@
 import { browseTeknisiPresent } from '@/requests';
 import { useStore } from '@/states';
-import { getDate } from '@/utils/parse';
+import { parseDate } from '@/utils/parse';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { startCase } from 'lodash';
@@ -19,7 +19,7 @@ export default function PerbaikanFormSelectTeknisi({ loading, disabled }) {
 
 	const reshapedFilter = React.useMemo(() => {
 		const { current: page, pageSize: limit } = pagination;
-		const today = getDate.tz(dayjs(), 'America/New_York').format('YYYY-MM-DD');
+		const today = parseDate(dayjs(), true).format('YYYY-MM-DD');
 		const fixedFilter = { role: 'teknisi', date: today };
 		return { page, limit, ...fixedFilter, ...filter };
 	}, [filter, pagination]);
@@ -38,6 +38,19 @@ export default function PerbaikanFormSelectTeknisi({ loading, disabled }) {
 			setSelectedTeknisi(userId ? [{ value: userId, label: startCase(`${fistName} ${lastName}`) }] : []);
 		}
 	}, [perbaikan, setSelectedTeknisi]);
+
+	const concatOptions = React.useMemo(() => {
+		if (teknisi.data?.attendances.length > 0) {
+			return [
+				...teknisi.data?.attendances?.map((item) => ({
+					value: item.user_id,
+					label: startCase(`${item.firstName} ${item.lastName}`),
+				})),
+				...selectedTeknisi,
+			];
+		}
+		return [];
+	}, [teknisi.data, selectedTeknisi]);
 
 	return (
 		<Form.Item
@@ -62,12 +75,7 @@ export default function PerbaikanFormSelectTeknisi({ loading, disabled }) {
 						<TeknisiGridPagination loading={teknisi.isFetching} selectBox />
 					</Flex>
 				)}
-				options={
-					teknisi.data?.attendances?.map((item) => ({
-						value: item.user_id,
-						label: startCase(`${item.firstName} ${item.lastName}`),
-					})) || selectedTeknisi
-				}
+				options={concatOptions}
 				disabled={disabled}
 				allowClear
 			/>

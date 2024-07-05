@@ -1,22 +1,20 @@
 import { ColumnProps } from '@/components/table';
 import { browseKategori, browsePerbaikan } from '@/requests';
 import { useStore } from '@/states';
-import { useUser } from '@/utils/hooks';
 import { parseTableFilter } from '@/utils/parse';
 import { useQueries } from '@tanstack/react-query';
 import * as React from 'react';
 
 import KategoriMesinTags from '@/components/flags/KategoriMesinTags';
 import StatusPerbaikanTags from '@/components/flags/StatusPerbaikanTags';
-import { DeleteOutlined, EditOutlined, EyeOutlined, FileAddOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { Button, Flex, Table } from 'antd';
 
-export default function PerbaikanTable() {
+export default function PenyelesaianPerbaikanTable() {
 	const { perbaikan: perbaikanState, setPerbaikanTable, setPerbaikan } = useStore();
 	const { table } = perbaikanState;
-	const user = useUser();
 
-	const extendParams = React.useMemo(() => ({ ...table.filter, isNotProceed: true, isReported: false }), [table.filter]);
+	const extendParams = React.useMemo(() => ({ ...table.filter, isReported: true, isNotProceed: true }), [table.filter]);
 
 	const [kategori, perbaikan] = useQueries({
 		queries: [
@@ -59,33 +57,16 @@ export default function PerbaikanTable() {
 					placeholder: 'Pilih kategori mesin',
 				},
 				status: {
-					detail: [
-						'Menunggu Konfirmasi',
-						'Proses Perbaikan',
-						'Indent Sparepart',
-						'Tidak Bisa Diperbaiki',
-						'Selesai Diperbaiki',
-					].map((opt) => ({ text: opt, value: opt })),
 					component: <StatusPerbaikanTags />,
-					placeholder: 'Pilih status perbaikan',
 				},
 			},
 		});
 	};
 
-	const updateBtnDisabled = React.useCallback(
-		(data) => {
-			if (user?.role === 'produksi') {
-				return data.status !== 'Menunggu Konfirmasi';
-			} else if (user?.role === 'leader') {
-				if (!data.isReported && data.status === 'Proses Perbaikan') return true;
-				return !['Menunggu Konfirmasi', 'Proses Perbaikan'].includes(data.status);
-			} else {
-				return true;
-			}
-		},
-		[user]
-	);
+	const updateBtnDisabled = React.useCallback((data) => {
+		if (!data.isReported && data.status === 'Proses Perbaikan') return true;
+		return !['Menunggu Konfirmasi', 'Proses Perbaikan'].includes(data.status);
+	}, []);
 
 	const columns = [
 		{
@@ -101,22 +82,17 @@ export default function PerbaikanTable() {
 						onClick={() => onSetForm(data, 'update')}
 						disabled={updateBtnDisabled(data)}
 					/>
-					{user?.role === 'produksi' ? (
-						<Button
-							type='primary'
-							icon={<DeleteOutlined />}
-							onClick={() => onSetForm(data, 'delete')}
-							disabled={data.status !== 'Menunggu Konfirmasi'}
-							danger
-						/>
-					) : null}
 				</Flex>
 			),
 		},
 		{ title: 'Mesin', ...getColumnProps('machineName') },
 		{ title: 'Kategori', ...getColumnProps('categoryId') },
 		{ title: 'Tanggal Kerusakan', ...getColumnProps('repairmentDate') },
-		{ title: 'Status', ...getColumnProps('status') },
+		{
+			title: 'Status',
+			...getColumnProps('status'),
+			filterDropdown: undefined,
+		},
 	];
 
 	const paginationOptions = {
@@ -128,20 +104,7 @@ export default function PerbaikanTable() {
 
 	return (
 		<Flex vertical gap={25} style={{ width: '100%', height: '100%' }}>
-			<Flex>
-				{user?.role === 'leader' ? <h3>Tugaskan Perbaikan</h3> : null}
-				{!['supervisior', 'leader'].includes(user?.role) ? (
-					<Button
-						type='primary'
-						size='large'
-						icon={<FileAddOutlined />}
-						onClick={() => setPerbaikan({ modalAddVisible: true })}
-					>
-						Tambah Laporan Permasalahan
-					</Button>
-				) : null}
-			</Flex>
-
+			<h3>Penyelesaian Laporan Perbaikan</h3>
 			<Table
 				loading={perbaikan.isLoading || kategori.isLoading}
 				columns={columns}

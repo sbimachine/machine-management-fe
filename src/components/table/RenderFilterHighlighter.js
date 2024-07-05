@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { parseDate, parseCurrency, parseNumber } from '@/utils/parse';
+import { parseDate, parseCurrency, parseNumber, getDate } from '@/utils/parse';
 
 import SearchHighlighter from '@/components/table/SearchHighlighter';
 
@@ -10,8 +10,8 @@ export function RenderFilterExist(props) {
 		case 'date':
 			return (
 				<SearchHighlighter
-					text={parseDate(value, true)?.format('DD-MM-YYYY') || `${value || '-'}`}
-					searchWords={parseDate(filter[dataIndex], true)?.format('DD-MM-YYYY') || `${filter[dataIndex] || '-'}`}
+					text={parseDate(value, true)?.format('DD-MM-YYYY HH:mm') || `${value || '-'}`}
+					searchWords={parseDate(filter[dataIndex], true)?.format('DD-MM-YYYY HH:mm') || `${filter[dataIndex] || '-'}`}
 				/>
 			);
 		case 'currency':
@@ -40,7 +40,7 @@ export function RenderFilterNotExist(props) {
 
 	switch (fieldType) {
 		case 'date':
-			return parseDate(value, true)?.format('DD-MM-YYYY') || `${value || '-'}`;
+			return parseDate(value, true)?.format('DD-MM-YYYY HH:mm') || `${value || '-'}`;
 		case 'currency':
 			return parseCurrency(value) || `${value || '-'}`;
 		case 'numeric':

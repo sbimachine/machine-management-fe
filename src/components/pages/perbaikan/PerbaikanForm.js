@@ -4,8 +4,9 @@ import { getBase64 } from '@/utils/base64';
 import { useUser } from '@/utils/hooks';
 import { getMimeTypes } from '@/utils/mimeTypes';
 import { omitObject, pickObject } from '@/utils/object';
-import { getDate, parseDate, parseFormData, parseFormFile } from '@/utils/parse';
+import { parseDate, parseFormData, parseFormFile } from '@/utils/parse';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { isEqual } from 'lodash';
 import * as React from 'react';
 
@@ -28,7 +29,7 @@ import {
 	Upload,
 } from 'antd';
 
-export default function PerbaikanForm({ form, onCancel }) {
+export default function PerbaikanForm({ form, onCancel, dynamicTitle }) {
 	const [submitLoading, setSubmitLoading] = React.useState(false);
 	const [imagePreview, setImagePreview] = React.useState(null);
 	const [previewVisible, setPreviewVisible] = React.useState(false);
@@ -40,9 +41,12 @@ export default function PerbaikanForm({ form, onCancel }) {
 	const user = useUser();
 
 	React.useEffect(() => {
-		if (perbaikan.formType === 'add') form.setFieldsValue({ repairmentDate: getDate(new Date()) });
-		else form.setFieldsValue({ repairmentDate: undefined });
-	}, [form, perbaikan.formType]);
+		if (perbaikan.formType === 'add' && perbaikan.modalAddVisible) {
+			form.setFieldsValue({ repairmentDate: dayjs() });
+		} else {
+			form.setFieldsValue({ repairmentDate: undefined });
+		}
+	}, [form, perbaikan.formType, perbaikan.modalAddVisible]);
 
 	const isGetPerbaikanById = React.useMemo(() => {
 		const { formType, selectedData } = perbaikan;
@@ -67,19 +71,20 @@ export default function PerbaikanForm({ form, onCancel }) {
 			try {
 				const { selectedData } = perbaikan;
 				const data = await getPerbaikanById(selectedData?.id);
-				const { id, repairmentDate, userId, description, status, category, machine, reportedImages } = data;
-				const parsedReportedImages =
-					reportedImages?.length > 0
-						? parseFormFile({ images: { urls: reportedImages.map(({ imageUrl }) => imageUrl), filename: `Kerusakan` } })
-						: [];
+				const { id, repairmentDate, userId, description, status, category, machine, reportedImages: images } = data;
+
+				const getImageUrl = { urls: images.map(({ imageUrl }) => imageUrl), filename: `Kerusakan` };
+				const parsedImages = images?.length > 0 ? parseFormFile({ images: getImageUrl }) : [];
+
 				const fieldData = {
 					userId,
 					machineId: machine.machineId,
 					repairmentDate: parseDate(repairmentDate, true),
+					images: parsedImages.images,
 					category,
 					status,
-					...parsedReportedImages,
 				};
+
 				setPerbaikan({ selectedData: data });
 				form.setFieldsValue({ id, description, ...fieldData });
 				return data;
@@ -112,7 +117,10 @@ export default function PerbaikanForm({ form, onCancel }) {
 	const onSubmit = (value) => {
 		setSubmitLoading(true);
 		if (perbaikan.formType === 'add') {
-			const { images, ...parsedData } = parseFormData(value, { datePicker: ['repairmentDate'], multipleFile: ['images'] });
+			const { images, repairmentDate, ...parsedData } = parseFormData(value, {
+				datetimePicker: ['repairmentDate'],
+				multipleFile: ['images'],
+			});
 			const formData = new FormData();
 			Object.entries(parsedData).forEach(([key, value]) => formData.append(key, value));
 			images.forEach((image) => formData.append('images', image));
@@ -131,6 +139,7 @@ export default function PerbaikanForm({ form, onCancel }) {
 			const files = parseFormFile({ images: { urls: images.map(({ imageUrl }) => imageUrl), filename: `Kerusakan` } });
 			const status = userId ? { status: statusPerbaikan } : {};
 			const category = categoryKerusakan ? { category: categoryKerusakan } : {};
+
 			const previousData = {
 				id,
 				userId,
@@ -141,22 +150,21 @@ export default function PerbaikanForm({ form, onCancel }) {
 				...status,
 				...files,
 			};
+
 			const checkData = isEqual(previousData, value);
 			if (!checkData) {
 				const { id: _id, ...others } = value;
-				const parsedData = parseFormData(others, { datePicker: ['repairmentDate'], multipleFile: ['images'] });
-				const newData =
-					user?.role === 'leader'
-						? userId
-							? pickObject(parsedData, ['status'])
-							: pickObject(parsedData, ['userId'])
-						: omitObject(parsedData, ['images']);
-				const formData = new FormData();
-				Object.entries(newData).forEach(([key, value]) => formData.append(key, value));
-				console.table([...formData]);
-				queryMutation.mutate({ id, newData: formData });
+				const parsedData = parseFormData(others, { datetimePicker: ['repairmentDate'], multipleFile: ['images'] });
+				const newData = {};
+				if (user?.role === 'leader') {
+					if (userId) Object.assign(newData, { newData: pickObject(parsedData, ['status']) });
+					else Object.assign(newData, { newData: pickObject(parsedData, ['userId', 'category']) });
+				} else {
+					Object.assign(newData, { newData: omitObject(parsedData, ['images']) });
+				}
+				queryMutation.mutate({ id, ...newData });
 			} else {
-				notif.info({ message: 'Tidak ada perubahan', description: 'Data Laporan Perbaikan Tidak Berubah' });
+				notif.info({ message: 'Tidak ada perubahan', description: `Data Laporan ${dynamicTitle} Tidak Berubah` });
 				setSubmitLoading(false);
 				onCancel();
 			}
@@ -222,15 +230,16 @@ export default function PerbaikanForm({ form, onCancel }) {
 				<Form.Item
 					name='repairmentDate'
 					label='Tanggal Kerusakan'
-					rules={[{ type: 'object', required: true, message: 'Harap pilih tanggal perbaikan' }]}
+					rules={[{ type: 'object', required: true, message: 'Harap pilih tanggal kerusakan' }]}
 					validateStatus={perbaikanById.isFetching ? 'validating' : ''}
 					hasFeedback
 				>
 					<DatePicker
-						format='DD-MM-YYYY'
+						format='DD-MM-YYYY HH:mm'
 						placeholder='Masukan tanggal perbaikan'
 						style={{ width: '100%' }}
-						disabled={disabledForm}
+						disabled
+						showTime
 						allowClear
 					/>
 				</Form.Item>
@@ -252,6 +261,8 @@ export default function PerbaikanForm({ form, onCancel }) {
 						name='category'
 						label='Kategori Kerusakan'
 						rules={[{ required: true, message: 'Harap pilih kategori kerusakan' }]}
+						validateStatus={perbaikanById.isFetching ? 'validating' : ''}
+						hasFeedback
 					>
 						<Select
 							placeholder='Pilih kategori mesin'
@@ -310,7 +321,13 @@ export default function PerbaikanForm({ form, onCancel }) {
 
 				{/* Status */}
 				{user?.role === 'leader' && perbaikan?.selectedData?.userId ? (
-					<Form.Item name='status' label='Status' rules={[{ required: true, message: 'Harap pilih status perbaikan' }]}>
+					<Form.Item
+						name='status'
+						label='Status'
+						rules={[{ required: true, message: 'Harap pilih status perbaikan' }]}
+						validateStatus={perbaikanById.isFetching ? 'validating' : ''}
+						hasFeedback
+					>
 						<Select
 							placeholder='Pilih status perbaikan'
 							options={[

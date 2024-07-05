@@ -1,15 +1,16 @@
 import { getPerbaikanById, reportPenugasan } from '@/requests';
 import { useStore } from '@/states';
-import { useUser } from '@/utils/hooks';
-import { pickObject } from '@/utils/object';
 import { getBase64 } from '@/utils/base64';
+import { useUser } from '@/utils/hooks';
+import { getMimeTypes } from '@/utils/mimeTypes';
 import { parseDate, parseFormData } from '@/utils/parse';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { startCase } from 'lodash';
 import * as React from 'react';
 
 import PerbaikanFormSelectMesin from '@/components/pages/perbaikan/PerbaikanFormSelectMesin';
-import { CheckOutlined, CloseOutlined, UploadOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, ConfigProvider, Upload, Image, DatePicker, Flex, Form, Input, notification } from 'antd';
+import { CheckOutlined, CloseOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { Button, ConfigProvider, DatePicker, Flex, Form, Image, Input, notification, Select, Upload } from 'antd';
 
 export default function PenugasanForm({ form, onCancel }) {
 	const [submitLoading, setSubmitLoading] = React.useState(false);
@@ -32,8 +33,13 @@ export default function PenugasanForm({ form, onCancel }) {
 			try {
 				const { selectedData } = penugasan;
 				const data = await getPerbaikanById(selectedData?.id);
-				const { id, repairmentDate, description, machine } = data;
-				const fieldData = { machineId: machine.machineId, repairmentDate: parseDate(repairmentDate, true) };
+				const { id, repairmentDate, description, machine, leaderFirstName, leaderLastName, category } = data;
+				const fieldData = {
+					machineId: machine.machineId,
+					repairmentDate: parseDate(repairmentDate, true),
+					leaderName: startCase(`${leaderFirstName} ${leaderLastName}`),
+					category,
+				};
 				setPenugasan({ selectedData: data });
 				form.setFieldsValue({ id, description, ...fieldData });
 				return data;
@@ -72,6 +78,14 @@ export default function PenugasanForm({ form, onCancel }) {
 		return e?.fileList;
 	};
 
+	const validateBefore = (mimeTypes, errors) => (file) => {
+		const mimeTypesArr = getMimeTypes(mimeTypes).split(',');
+		const mimeTypesMsg = mimeTypesArr.filter((mime) => mime.startsWith('.')).join(', ');
+		const checkFileType = mimeTypesArr.includes(file.type);
+		if (!checkFileType) form.setFields(errors.map((name) => ({ name, errors: [`File harus bertipe ${mimeTypesMsg}`] })));
+		return checkFileType || Upload.LIST_IGNORE;
+	};
+
 	const onPreview = async (file) => {
 		if (!file.url && !file.preview) file.preview = await getBase64(file.originFileObj);
 		setImagePreview(file.url || file.preview);
@@ -99,6 +113,17 @@ export default function PenugasanForm({ form, onCancel }) {
 				{/* Machine */}
 				<PerbaikanFormSelectMesin loading={penugasanById.isFetching} disabled={disabledForm} />
 
+				{/* Ditugaskan oleh */}
+				<Form.Item
+					name='leaderName'
+					label='Ditugaskan oleh'
+					rules={[{ required: true, message: 'Harap isi ditugaskan oleh' }]}
+					validateStatus={penugasanById.isFetching ? 'validating' : ''}
+					hasFeedback
+				>
+					<Input placeholder='Pilih Ditugaskan oleh' disabled={disabledForm} />
+				</Form.Item>
+
 				{/* Repairment Date */}
 				<Form.Item
 					name='repairmentDate'
@@ -108,9 +133,29 @@ export default function PenugasanForm({ form, onCancel }) {
 					hasFeedback
 				>
 					<DatePicker
-						format='DD-MM-YYYY'
+						format='DD-MM-YYYY HH:MM'
 						placeholder='Masukan tanggal penugasan'
 						style={{ width: '100%' }}
+						disabled={disabledForm}
+						showTime
+						allowClear
+					/>
+				</Form.Item>
+
+				{/* Category */}
+				<Form.Item
+					name='category'
+					label='Kategori Kerusakan'
+					rules={[{ required: true, message: 'Harap pilih kategori kerusakan' }]}
+					validateStatus={penugasanById.isFetching ? 'validating' : ''}
+					hasFeedback
+				>
+					<Select
+						placeholder='Pilih kategori mesin'
+						options={[
+							{ value: 'Berat', label: 'Berat' },
+							{ value: 'Ringan', label: 'Ringan' },
+						]}
 						disabled={disabledForm}
 						allowClear
 					/>
@@ -130,12 +175,19 @@ export default function PenugasanForm({ form, onCancel }) {
 				{/* Image */}
 				<Form.Item
 					name='images'
-					label='Gambar'
+					label='Foto Laporan Perbaikan'
 					valuePropName='fileList'
 					getValueFromEvent={normFile}
-					rules={[{ type: 'array', required: true, message: 'Harap pilih gambar!' }]}
+					rules={[{ type: 'array', required: true, message: 'Harap pilih Foto!' }]}
 				>
-					<Upload name='images' listType='picture' onPreview={onPreview}>
+					<Upload
+						name='images'
+						listType='picture'
+						accept={getMimeTypes('images')}
+						beforeUpload={validateBefore('images', ['images'])}
+						onPreview={onPreview}
+						multiple
+					>
 						<Button icon={<UploadOutlined />} disabled={submitLoading || penugasanById.isFetching}>
 							Pilih Gambar
 						</Button>

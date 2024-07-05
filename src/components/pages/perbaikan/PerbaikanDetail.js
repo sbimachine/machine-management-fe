@@ -1,10 +1,10 @@
 import { useStore } from '@/states';
-import { useUser } from '@/utils/hooks';
 import { pickObject } from '@/utils/object';
 import { parseDate } from '@/utils/parse';
-import { startCase } from 'lodash';
+import { isNil, omitBy, startCase } from 'lodash';
 import * as React from 'react';
 
+import KategoriKerusakanTags from '@/components/flags/KategoriKerusakanTags';
 import StatusPerbaikanTags from '@/components/flags/StatusPerbaikanTags';
 import { Descriptions, Empty, Flex, Image, Skeleton, Tag, theme } from 'antd';
 
@@ -12,21 +12,42 @@ export default function PerbaikanDetail({ loading, type = 'detail' }) {
 	const { perbaikan: getPerbaikan } = useStore();
 	const perbaikan = getPerbaikan.selectedData;
 	const { token } = theme.useToken();
-	const user = useUser();
 
 	const perbaikanItems = React.useMemo(() => {
 		if (perbaikan?.machine) {
-			const selectedKeys = ['userId', 'firstName', 'lastName', 'machine', 'repairmentDate', 'status', 'description'];
+			const selectedKeys = [
+				'userId',
+				'firstName',
+				'lastName',
+				'machine',
+				'category',
+				'repairmentDate',
+				'status',
+				'description',
+				'leaderId',
+				'leaderFirstName',
+				'leaderLastName',
+			];
 			const getData = pickObject(perbaikan, selectedKeys);
+			const teknisi = getData.userId ? startCase(`${getData.firstName} ${getData.lastName}`) : undefined;
+			const leader = getData.leaderId ? startCase(`${getData.leaderFirstName} ${getData.leaderLastName}`) : undefined;
+			const category = getData.category ? <KategoriKerusakanTags value={getData.category} /> : undefined;
+
 			const reshapedData = {
 				Mesin: getData.machine.machineName,
 				Kategori: <Tag>{getData.machine.category.categoryName}</Tag>,
 				Status: <StatusPerbaikanTags value={getData.status} />,
-				'Tanggal Kerusakan': parseDate(getData.repairmentDate, true)?.format('DD-MM-YYYY'),
-				...(getData.userId ? { 'Nama Teknisi': startCase(`${getData.firstName} ${getData.lastName}`) } : {}),
+				'Tanggal Kerusakan': parseDate(getData.repairmentDate, true)?.format('DD-MM-YYYY HH:mm'),
+				'Kategori Kerusakan': category,
+				'Ditugaskan oleh': leader,
+				'Nama Teknisi': teknisi,
 				Keterangan: getData.description,
 			};
-			return Object.entries(reshapedData).map(([key, value], i) => ({ key: i + 1, label: key, children: value || '-' }));
+			return Object.entries(omitBy(reshapedData, isNil)).map(([key, value], i) => ({
+				key: i + 1,
+				label: key,
+				children: value || '-',
+			}));
 		}
 		return [];
 	}, [perbaikan]);
@@ -76,29 +97,27 @@ export default function PerbaikanDetail({ loading, type = 'detail' }) {
 					</Flex>
 
 					{/* Images */}
-					{['leader', 'supervisior'].includes(user?.role) ? (
-						<Flex vertical gap={5} style={{ width: '100%' }}>
-							<span style={{ fontWeight: 600, fontSize: '16px', lineHeight: 1.5 }}>Foto Laporan Perbaikan</span>
-							{!loading ? (
-								<>
-									{imagesItems?.length > 0 ? (
-										<>
-											<Image.PreviewGroup items={imagesItems?.map((image) => image.imageUrl)}>
-												<Image width='100%' src={imagesItems[0]?.imageUrl} alt={`Foto Laporan Perbaikan`} />
-											</Image.PreviewGroup>
-											<span style={{ color: token.colorTextDescription }}>Klik untuk melihat semua gambar</span>
-										</>
-									) : (
-										<Flex justify='center' align='center' style={{ height: '100%', paddingTop: 20, paddingBottom: 20 }}>
-											<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ margin: 0 }} description='Foto belum tersedia' />
-										</Flex>
-									)}
-								</>
-							) : (
-								<Skeleton loading={loading} title={null} paragraph={{ rows: 6 }} active />
-							)}
-						</Flex>
-					) : null}
+					<Flex vertical gap={5} style={{ width: '100%' }}>
+						<span style={{ fontWeight: 600, fontSize: '16px', lineHeight: 1.5 }}>Foto Laporan Perbaikan</span>
+						{!loading ? (
+							<>
+								{imagesItems?.length > 0 ? (
+									<>
+										<Image.PreviewGroup items={imagesItems?.map((image) => image.imageUrl)}>
+											<Image width='100%' src={imagesItems[0]?.imageUrl} alt={`Foto Laporan Perbaikan`} />
+										</Image.PreviewGroup>
+										<span style={{ color: token.colorTextDescription }}>Klik untuk melihat semua gambar</span>
+									</>
+								) : (
+									<Flex justify='center' align='center' style={{ height: '100%', paddingTop: 20, paddingBottom: 20 }}>
+										<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ margin: 0 }} description='Foto belum tersedia' />
+									</Flex>
+								)}
+							</>
+						) : (
+							<Skeleton loading={loading} title={null} paragraph={{ rows: 6 }} active />
+						)}
+					</Flex>
 				</Flex>
 			) : null}
 		</Flex>

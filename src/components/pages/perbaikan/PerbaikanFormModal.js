@@ -42,7 +42,7 @@ export default function PerbaikanFormModal() {
 	return (
 		<Modal title={checkFormType.title} open={checkFormType.visible} onCancel={onCancel} width={500} footer={null} centered>
 			<div style={{ paddingTop: 10 }}>
-				<PerbaikanForm form={form} onCancel={onCancel} />
+				<PerbaikanForm form={form} onCancel={onCancel} dynamicTitle={dynamicTitle} />
 			</div>
 		</Modal>
 	);

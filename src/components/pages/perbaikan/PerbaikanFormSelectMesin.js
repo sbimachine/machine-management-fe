@@ -1,6 +1,7 @@
 import { browseMesin } from '@/requests';
 import { useStore } from '@/states';
 import { useQuery } from '@tanstack/react-query';
+import { isEmpty } from 'lodash';
 import * as React from 'react';
 
 import MesinGridPagination from '@/components/pages/mesin/MesinGridPagination';
@@ -11,12 +12,12 @@ export default function PerbaikanFormSelectMesin({ loading, disabled }) {
 	const [selectMesin, setSelectMesin] = React.useState(false);
 	const [selectedMesin, setSelectedMesin] = React.useState([]);
 
-	const { mesin: mesinState, perbaikan } = useStore();
+	const { mesin: mesinState, perbaikan, penugasan } = useStore();
 	const { filter, pagination } = mesinState.table;
 
 	const reshapedFilter = React.useMemo(() => {
 		const { current: page, pageSize: limit } = pagination;
-		return { page, limit, ...filter };
+		return { page, limit, ...filter, status: 'ready' };
 	}, [filter, pagination]);
 
 	const mesin = useQuery({ queryKey: ['mesin', reshapedFilter], queryFn: browseMesin });
@@ -28,11 +29,27 @@ export default function PerbaikanFormSelectMesin({ loading, disabled }) {
 	}, [mesin, mesinState, reshapedFilter]);
 
 	React.useEffect(() => {
+		const machineTemp = {};
 		if (perbaikan?.selectedData?.machine) {
-			const { machineId, machineName } = perbaikan.selectedData;
-			setSelectedMesin([{ value: machineId, label: machineName }]);
+			const { machineId, machineName } = perbaikan.selectedData.machine;
+			Object.assign(machineTemp, { value: machineId, label: machineName });
 		}
-	}, [perbaikan, setSelectedMesin]);
+		if (penugasan?.selectedData?.machine) {
+			const { machineId, machineName } = penugasan.selectedData.machine;
+			Object.assign(machineTemp, { value: machineId, label: machineName });
+		}
+		setSelectedMesin(!isEmpty(machineTemp) ? [machineTemp] : []);
+	}, [perbaikan.selectedData, penugasan.selectedData, setSelectedMesin]);
+
+	const concatOptions = React.useMemo(() => {
+		if (mesin.data?.machines.length > 0) {
+			return [
+				...mesin.data?.machines.map((machine) => ({ value: machine.id, label: machine.machineName })),
+				...selectedMesin,
+			];
+		}
+		return [];
+	}, [mesin.data, selectedMesin]);
 
 	return (
 		<Form.Item
@@ -57,9 +74,7 @@ export default function PerbaikanFormSelectMesin({ loading, disabled }) {
 						<MesinGridPagination loading={mesin.isFetching} selectBox />
 					</Flex>
 				)}
-				options={
-					mesin.data?.machines?.map((machine) => ({ value: machine.id, label: machine.machineName })) || selectedMesin
-				}
+				options={concatOptions}
 				disabled={disabled}
 				allowClear
 			/>

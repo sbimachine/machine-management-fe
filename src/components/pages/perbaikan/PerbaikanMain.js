@@ -4,6 +4,7 @@ import PerbaikanDeleteModal from '@/components/pages/perbaikan/PerbaikanDeleteMo
 import PerbaikanDetailModal from '@/components/pages/perbaikan/PerbaikanDetailModal';
 import PerbaikanFormModal from '@/components/pages/perbaikan/PerbaikanFormModal';
 import PerbaikanTable from '@/components/pages/perbaikan/PerbaikanTable';
+import PenyelesaianPerbaikanTable from '@/components/pages/perbaikan/PenyelesaianPerbaikanTable';
 import { useUser } from '@/utils/hooks';
 import { Flex } from 'antd';
 import * as React from 'react';
@@ -23,6 +24,7 @@ export default function PerbaikanMain() {
 
 			{/* Table */}
 			<PerbaikanTable />
+			{user?.role === 'leader' ? <PenyelesaianPerbaikanTable /> : null}
 
 			{/* Modals */}
 			<PerbaikanFormModal />

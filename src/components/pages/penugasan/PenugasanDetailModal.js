@@ -47,14 +47,12 @@ export default function PenugasanDetailModal() {
 			title='Detail Laporan Perbaikan'
 			open={penugasan.modalShowVisible}
 			onCancel={onCancel}
-			width={400}
+			width={500}
 			footer={null}
 			centered
 		>
 			<Flex style={{ padding: '10px 0' }} gap={20} vertical>
-				<Skeleton loading={penugasanById.isFetching} title={null} paragraph={{ rows: 6 }} active>
-					<PenugasanDetail loading={penugasanById.isFetching} />
-				</Skeleton>
+				<PenugasanDetail loading={penugasanById.isFetching} />
 			</Flex>
 
 			{notifContext}
