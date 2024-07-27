@@ -46,8 +46,8 @@ export default function AbsensiTable() {
 	};
 
 	const columns = [
-		{ title: 'Waktu Masuk', ...getColumnProps('clockIn'), filterDropdown: null },
-		{ title: 'Waktu Keluar', ...getColumnProps('clockOut'), filterDropdown: null },
+		{ title: 'Waktu Kehadiran', ...getColumnProps('clockIn'), filterDropdown: null },
+		// { title: 'Waktu Keluar', ...getColumnProps('clockOut'), filterDropdown: null },
 		{ title: 'Status', ...getColumnProps('status') },
 	];
 
